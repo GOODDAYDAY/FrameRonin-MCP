@@ -54,13 +54,13 @@ Input: *"a warrior with silver armor and a sword"* — automatically expanded, t
   <img src="docs/assets/demo-full-pipeline.png" alt="Full Pipeline Demo" width="100%">
 </p>
 
-**Extracted frames from row 0, padded to square, no distortion:**
+**All 16 frames extracted at native resolution — 4 directions × 4 animation frames:**
 
 <p align="center">
-  <img src="docs/assets/warrior_anim.gif" width="144">  
-  <img src="docs/assets/sword_anim.gif" width="144">  
-  <img src="docs/assets/slime_anim.gif" width="144">
-  <br><sub>Warrior · Sword · Slime — 4-frame loops, native cells padded to square</sub>
+  <img src="docs/assets/warrior_anim.gif" width="192">  
+  <img src="docs/assets/sword_anim.gif" width="192">  
+  <img src="docs/assets/slime_anim.gif" width="192">
+  <br><sub>Row 0 (Down) animation loops — native cells padded square, NEAREST, no quality loss</sub>
 </p>
 
 | Step | Tool | Input → Output |

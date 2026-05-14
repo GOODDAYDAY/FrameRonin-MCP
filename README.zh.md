@@ -54,13 +54,13 @@ FrameRonin MCP 将 [FrameRonin](https://github.com/systemchester/FrameRonin) 像
   <img src="docs/assets/demo-full-pipeline.png" alt="完整管线演示" width="100%">
 </p>
 
-**从第0行提取的帧，补白到正方形，无变形：**
+**全部16帧按原生分辨率提取 — 4方向 × 4动画帧：**
 
 <p align="center">
-  <img src="docs/assets/warrior_anim.gif" width="144">  
-  <img src="docs/assets/sword_anim.gif" width="144">  
-  <img src="docs/assets/slime_anim.gif" width="144">
-  <br><sub>战士 · 剑 · 史莱姆 — 4帧循环，原始格补白为正方形</sub>
+  <img src="docs/assets/warrior_anim.gif" width="192">  
+  <img src="docs/assets/sword_anim.gif" width="192">  
+  <img src="docs/assets/slime_anim.gif" width="192">
+  <br><sub>第0行(向下)动画循环 — 原生cell补白正方形, NEAREST, 无质量损失</sub>
 </p>
 
 | 步骤 | 工具 | 效果 |
