@@ -1,0 +1,25 @@
+[project]
+name = "frame-ronin-mcp"
+version = "0.1.0"
+description = "MCP server for FrameRonin — video to spritesheet, image matting, GIF processing, pixel art conversion"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.11"
+dependencies = [
+    "mcp>=1.0.0",
+    "pillow>=10.0.0",
+    "numpy>=1.24.0",
+    "opencv-python-headless>=4.8.0",
+    "rembg>=2.0.0",
+    "imageio>=2.31.0",
+]
+
+[project.scripts]
+frame-ronin-mcp = "frame_ronin_mcp.server:main"
+
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
