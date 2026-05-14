@@ -42,30 +42,34 @@ FrameRonin MCP 将 [FrameRonin](https://github.com/systemchester/FrameRonin) 像
   → image_pixelate("artwork.png", num_colors=16, scale_result=4)
 ```
 
-### 效果展示
+### 提示词自动扩写
 
-Gemini生成4×4精灵表，FrameRonin加工成可用的游戏素材：
+所有 `generate_*` 工具会自动将简短提示词扩写为2000+字的专业像素画规格——包含色板规范、抗锯齿禁令、抖动模式、精灵表布局约定和RPG Maker格式要求。只需用大白话描述角色/物品/怪物，框架自动补全技术细节。
+
+### 演示 — 完整管线
+
+输入: *"一个穿银盔甲拿剑的战士"* — 自动扩写后，经过全部5步处理：
 
 <p align="center">
-  <img src="docs/assets/pipeline-demo.png" alt="流程" width="100%">
+  <img src="docs/assets/demo-full-pipeline.png" alt="完整管线演示" width="100%">
 </p>
 
-**每行一个动画方向，每列是该方向的一帧：**
+**每行是一个动画方向，每列是该方向的一帧：**
 
 <p align="center">
-  <img src="docs/assets/01_warrior_anim.gif" width="144">  
-  <img src="docs/assets/02_sword_anim.gif" width="144">  
-  <img src="docs/assets/03_slime_anim.gif" width="144">
+  <img src="docs/assets/warrior_anim.gif" width="144">  
+  <img src="docs/assets/sword_anim.gif" width="144">  
+  <img src="docs/assets/slime_anim.gif" width="144">
   <br><sub>战士行走 · 剑发光 · 史莱姆弹跳 — 从精灵表拆出的4帧循环动画</sub>
 </p>
 
 | 步骤 | 工具 | 效果 |
 |---|---|---|
-| 1. 生成 | `generate_gemini` | 提示词 → 精灵表 |
-| 2. 清洁 | `image_remove_gemini_watermark` | 去除AI水印 |
-| 3. 抠图 | `image_remove_background` | 白底 → 透明背景 |
-| 4. 缩放 | `image_resize` | 缩放到目标网格（如192×192=4×48px） |
-| 5. 拆帧 | `spritesheet_split` | 精灵表 → 16个独立帧PNG |
+| 1. 生成 | `generate_gemini` | 自动扩写提示词 → 1024×559精灵表 |
+| 2. 清洁 | `image_remove_gemini_watermark` | 反向Alpha混合去除AI水印 |
+| 3. 抠图 | `image_remove_background` | 白底 → 透明背景 (rembg/U2Net) |
+| 4. 缩放 | `image_resize` | 缩放到192×192 (4×48px RPG Maker网格) |
+| 5. 拆帧 | `spritesheet_split` | 精灵表 → 16个48×48独立帧PNG |
 
 **最终产出**: 16张48×48透明背景PNG — 可直接导入RPG Maker MV、Godot、Unity等引擎使用。
 

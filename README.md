@@ -42,32 +42,36 @@ FrameRonin MCP wraps the [FrameRonin](https://github.com/systemchester/FrameRoni
   → image_pixelate("artwork.png", num_colors=16, scale_result=4)
 ```
 
-### Screenshots
+### Prompt Auto-Expansion
 
-Gemini generates a sprite sheet (4×4 grid). FrameRonin processes it into usable game assets:
+All `generate_*` tools automatically expand short prompts to 2000+ characters with professional pixel art specifications — color palette rules, anti-aliasing bans, dithering patterns, sprite sheet layout conventions, and RPG Maker format requirements. Just describe your character/item/monster in plain language; the framework handles the technical details.
+
+### Demo — Full Pipeline
+
+Input: *"a warrior with silver armor and a sword"* — automatically expanded, then processed through all 5 steps:
 
 <p align="center">
-  <img src="docs/assets/pipeline-demo.png" alt="Pipeline" width="100%">
+  <img src="docs/assets/demo-full-pipeline.png" alt="Full Pipeline Demo" width="100%">
 </p>
 
 **Each row is an animation direction, each column is a frame of that animation:**
 
 <p align="center">
-  <img src="docs/assets/01_warrior_anim.gif" width="144">  
-  <img src="docs/assets/02_sword_anim.gif" width="144">  
-  <img src="docs/assets/03_slime_anim.gif" width="144">
-  <br><sub>Warrior walk · Sword glow · Slime bounce — 4-frame loops extracted from sprite sheet</sub>
+  <img src="docs/assets/warrior_anim.gif" width="144">  
+  <img src="docs/assets/sword_anim.gif" width="144">  
+  <img src="docs/assets/slime_anim.gif" width="144">
+  <br><sub>Warrior walk · Sword glow · Slime bounce — 4-frame loops from sprite sheet</sub>
 </p>
 
 | Step | Tool | Input → Output |
 |---|---|---|
-| 1. Generate | `generate_gemini` | Prompt → sprite sheet |
-| 2. Clean | `image_remove_gemini_watermark` | Remove AI watermark |
-| 3. Matte | `image_remove_background` | White bg → transparent |
-| 4. Resize | `image_resize` | Scale to target grid (e.g. 192×192 for 4×48px) |
-| 5. Split | `spritesheet_split` | Sheet → 16 individual frame PNGs |
+| 1. Generate | `generate_gemini` | Auto-expanded prompt → 1024×559 sprite sheet |
+| 2. Clean | `image_remove_gemini_watermark` | Remove AI watermark via reverse alpha blending |
+| 3. Matte | `image_remove_background` | White bg → transparent (rembg/U2Net) |
+| 4. Resize | `image_resize` | Scale to 192×192 (4×48px RPG Maker grid) |
+| 5. Split | `spritesheet_split` | Sheet → 16 individual 48×48 frame PNGs |
 
-**Final output**: 16 PNGs (48×48 each with transparent background) — directly importable into RPG Maker MV, Godot, Unity, or any 2D game engine.
+**Final output**: 16 PNGs (48×48, transparent background) — directly importable into RPG Maker MV, Godot, Unity, or any 2D game engine.
 
 ---
 
