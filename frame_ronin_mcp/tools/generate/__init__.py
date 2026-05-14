@@ -10,11 +10,16 @@ Backends:
 Each backend is self-contained in its own file. Add new backends by
 creating a new module with a `generate(prompt, output_path, **kw) -> Path` function.
 
+All prompts are automatically expanded to 2000+ chars with pixel art
+technical requirements (palette, anti-aliasing rules, sprite sheet layout, etc.)
+unless the user prompt is already detailed enough.
+
 MCP tools:
   generate_gemini      — Gemini free web app
   generate_dalle        — DALL-E 3
   generate_stability    — Stability AI
   generate_gemini_api   — Gemini API (paid)
+  generate_siliconflow  — SiliconFlow (Qwen/FLUX)
   generate_rpgmaker     — any backend → full RPG Maker pipeline
 """
 
@@ -32,6 +37,64 @@ BACKENDS = {
 }
 
 DEFAULT_BACKEND = "gemini"  # free, no key needed
+
+# ── Prompt expansion ──────────────────────────────────────────────────────
+
+_PIXEL_ART_SPEC = """
+PIXEL ART TECHNICAL REQUIREMENTS:
+- True pixel art style, absolutely NO anti-aliasing, NO blur, NO gradients between colors
+- Each pixel must be a single solid color with hard edges
+- Use a limited, well-chosen color palette with distinct shades for highlights and shadows
+- Every pixel intentionally placed — no random noise, no AI smear
+- Clean silhouette with clear readable shapes at small scale
+- Dithering (checkerboard pattern) for color transitions where needed
+- Consistent light source from top-left across all frames
+- 1px dark outline on character/enemy silhouettes for game readability
+
+SPRITE SHEET LAYOUT:
+- Exactly 4 rows and 4 columns = 16 frames total
+- White background (#FFFFFF) for every frame
+- Each row = one animation direction or state, each column = one frame
+- Top row: facing down / idle animation
+- Second row: facing left / walk or action cycle
+- Third row: facing right / walk or action cycle (mirror of row 2)
+- Bottom row: facing up / alternate state
+- Frames within a row must form a smooth animation loop when played in sequence
+- Clear visual separation between frame cells
+
+OUTPUT FORMAT:
+- Single PNG image, white background
+- Sprite sheet fills most of the image canvas
+- Frames arranged as a clean grid
+"""
+
+_RPGMAKER_SPEC = """
+RPG MAKER MV FORMAT REQUIREMENTS:
+- The sprite sheet must follow RPG Maker MV character sheet conventions
+- 4 rows (directions: down, left, right, up) × 4 columns (animation frames)
+- Each character frame cell should be exactly 48×48 pixels in the final output
+- The engine reads row 0 as facing-down, row 1 as facing-left, row 2 as facing-right, row 3 as facing-up
+- File naming: prefix with $ for single-character sheets (e.g. $hero.png)
+- Transparent or white background accepted — white is preferred for clarity
+"""
+
+
+def expand_prompt(prompt: str, style: str = "pixel_art") -> str:
+    """
+    Expand a short user prompt into a detailed 2000+ char prompt
+    with professional pixel art / RPG Maker specifications.
+
+    If the prompt is already detailed enough (1000+ chars), pass through as-is.
+    """
+    if len(prompt) >= 1000:
+        return prompt
+
+    spec = _PIXEL_ART_SPEC
+    if style == "rpgmaker":
+        spec = _RPGMAKER_SPEC + _PIXEL_ART_SPEC
+
+    expanded = f"{prompt}\n\n{spec}"
+    return expanded
 
 
 def _rpgmaker_pipeline(
@@ -53,11 +116,12 @@ def _rpgmaker_pipeline(
 
     mod = BACKENDS.get(backend, gemini_web)
 
-    # Build RPG Maker prompt
+    # Build RPG Maker prompt with expansion
+    prompt = expand_prompt(prompt, style="rpgmaker")
     full_prompt = (
         f"{prompt}\n"
         f"Generate as a pixel art RPG Maker MV sprite sheet: "
-        f"exactly {rows} rows x {cols} columns of frames. "
+        f"exactly {rows} rows x {cols} columns of {target_w}x{target_h} pixel frames. "
         f"White background. Clean pixel edges, no anti-aliasing. "
         f"Each frame should be a distinct pose/animation step."
     )
@@ -129,6 +193,7 @@ def _make_generate_handler(backend_name: str):
 
     def handler(args: dict) -> dict:
         prompt = args["prompt"]
+        prompt = expand_prompt(prompt, style="pixel_art")
         output_path = args.get("output_path")
         kwargs = {"prompt": prompt, "output_path": output_path}
 
