@@ -1,21 +1,15 @@
 """
-FrameRonin MCP Server — pixel art & sprite sheet processing tools for AI.
+FrameRonin MCP Server — all-in-one pixel art & game asset pipeline for AI.
 
-16 tools across 3 phases:
-  Phase 1: video_to_spritesheet, video_get_info, video_remove_watermark,
-           image_remove_background
-  Phase 2: image_chroma_key, image_double_background_matte,
-           image_remove_gemini_watermark, image_resize, image_crop,
-           image_merge_grid, gif_extract_frames, frames_to_gif,
-           spritesheet_split, spritesheet_compose
-  Phase 3: image_pixelate, image_pixelate_simple
+  Generate: gemini_generate, gemini_generate_rpgmaker
+  Video:    video_to_spritesheet, video_get_info, video_remove_watermark
+  Matting:  image_remove_background, image_chroma_key, image_double_background_matte
+  Image:    image_remove_gemini_watermark, image_resize, image_crop, image_merge_grid
+  GIF:      gif_extract_frames, frames_to_gif
+  Sprite:   spritesheet_split, spritesheet_compose
+  Pixel:    image_pixelate, image_pixelate_simple
 
-Usage:
-  pip install frame-ronin-mcp
-  frame-ronin-mcp
-
-Or directly:
-  python -m frame_ronin_mcp.server
+Usage: pip install frame-ronin-mcp && frame-ronin-mcp
 """
 
 import json
@@ -50,6 +44,10 @@ from .tools.gif_sprite import (
 from .tools.pixelate import (
     handle_image_pixelate,
     handle_image_pixelate_simple,
+)
+from .tools.gemini import (
+    handle_gemini_generate,
+    handle_gemini_generate_rpgmaker,
 )
 
 
@@ -645,6 +643,87 @@ TOOLS = [
             "required": ["image_path"],
         },
     ),
+    # ── Gemini Generation ──
+    types.Tool(
+        name="gemini_generate",
+        description=(
+            "Generate an image using Gemini's free web app (gemini.google.com) via browser automation. "
+            "First call will open a Chrome window for Google login — subsequent calls reuse the saved session. "
+            "This uses the FREE web version of Gemini, no API key needed.\n\n"
+            "After generating, process the result through other FrameRonin tools: "
+            "image_remove_gemini_watermark → image_remove_background → image_resize → spritesheet_compose."
+        ),
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "prompt": {
+                    "type": "string",
+                    "description": "Text prompt describing the image to generate. Be specific about style, format, background, layout.",
+                },
+                "output_path": {
+                    "type": "string",
+                    "description": "Path to save the generated image (default: gemini_generated.png).",
+                },
+                "headless": {
+                    "type": "boolean",
+                    "description": "Run browser invisibly. Requires prior login. Default false (shows browser window).",
+                    "default": False,
+                },
+            },
+            "required": ["prompt"],
+        },
+    ),
+    types.Tool(
+        name="gemini_generate_rpgmaker",
+        description=(
+            "Full pipeline: Gemini generation → watermark removal → AI background removal → "
+            "resize → split into individual RPG Maker frames. One call does everything.\n\n"
+            "Uses Gemini's free web app for generation (Playwright browser automation). "
+            "First call opens a Chrome window for Google login. Subsequent calls reuse the session.\n\n"
+            "The prompt is automatically enhanced with RPG Maker sprite sheet formatting instructions. "
+            "Output: raw image, clean (no watermark), transparent background, resized, and individual frame PNGs."
+        ),
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "prompt": {
+                    "type": "string",
+                    "description": "Describe the character (e.g. 'fire mage with staff, red robes'). RPG Maker formatting is added automatically.",
+                },
+                "output_dir": {
+                    "type": "string",
+                    "description": "Directory for output files (default: rpgmaker_output).",
+                    "default": "rpgmaker_output",
+                },
+                "width": {
+                    "type": "integer",
+                    "description": "Frame width in pixels (default 48, RPG Maker standard).",
+                    "default": 48,
+                },
+                "height": {
+                    "type": "integer",
+                    "description": "Frame height in pixels (default 48).",
+                    "default": 48,
+                },
+                "rows": {
+                    "type": "integer",
+                    "description": "Number of animation rows (default 4).",
+                    "default": 4,
+                },
+                "columns": {
+                    "type": "integer",
+                    "description": "Number of frames per row (default 4).",
+                    "default": 4,
+                },
+                "headless": {
+                    "type": "boolean",
+                    "description": "Run browser invisibly (needs prior login). Default false.",
+                    "default": False,
+                },
+            },
+            "required": ["prompt"],
+        },
+    ),
 ]
 
 # ── Tool handler dispatch ─────────────────────────────────────────────────
@@ -666,6 +745,8 @@ _HANDLERS = {
     "spritesheet_compose": handle_spritesheet_compose,
     "image_pixelate": handle_image_pixelate,
     "image_pixelate_simple": handle_image_pixelate_simple,
+    "gemini_generate": handle_gemini_generate,
+    "gemini_generate_rpgmaker": handle_gemini_generate_rpgmaker,
 }
 
 
