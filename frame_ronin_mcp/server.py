@@ -1,7 +1,8 @@
 """
 FrameRonin MCP Server — all-in-one pixel art & game asset pipeline for AI.
 
-  Generate: gemini_generate, gemini_generate_rpgmaker
+  Generate: generate_gemini, generate_dalle, generate_stability,
+            generate_gemini_api, generate_rpgmaker (multi-backend pipeline)
   Video:    video_to_spritesheet, video_get_info, video_remove_watermark
   Matting:  image_remove_background, image_chroma_key, image_double_background_matte
   Image:    image_remove_gemini_watermark, image_resize, image_crop, image_merge_grid
@@ -45,9 +46,12 @@ from .tools.pixelate import (
     handle_image_pixelate,
     handle_image_pixelate_simple,
 )
-from .tools.gemini import (
-    handle_gemini_generate,
-    handle_gemini_generate_rpgmaker,
+from .tools.generate import (
+    handle_generate_gemini,
+    handle_generate_dalle,
+    handle_generate_stability,
+    handle_generate_gemini_api,
+    handle_generate_rpgmaker,
 )
 
 
@@ -643,83 +647,103 @@ TOOLS = [
             "required": ["image_path"],
         },
     ),
-    # ── Gemini Generation ──
+    # ── Image Generation (multi-backend) ──
     types.Tool(
-        name="gemini_generate",
+        name="generate_gemini",
         description=(
-            "Generate an image using Gemini's free web app (gemini.google.com) via browser automation. "
-            "First call will open a Chrome window for Google login — subsequent calls reuse the saved session. "
-            "This uses the FREE web version of Gemini, no API key needed.\n\n"
-            "After generating, process the result through other FrameRonin tools: "
-            "image_remove_gemini_watermark → image_remove_background → image_resize → spritesheet_compose."
+            "Generate an image using Gemini's FREE web app (gemini.google.com) via Playwright browser automation. "
+            "No API key needed. First call opens Chrome for Google login — subsequent calls reuse the saved session. "
+            "Best for: free, no setup required.\n"
+            "For API-based backends, see: generate_dalle (OpenAI), generate_stability, generate_gemini_api."
         ),
         inputSchema={
             "type": "object",
             "properties": {
-                "prompt": {
-                    "type": "string",
-                    "description": "Text prompt describing the image to generate. Be specific about style, format, background, layout.",
-                },
-                "output_path": {
-                    "type": "string",
-                    "description": "Path to save the generated image (default: gemini_generated.png).",
-                },
-                "headless": {
-                    "type": "boolean",
-                    "description": "Run browser invisibly. Requires prior login. Default false (shows browser window).",
-                    "default": False,
-                },
+                "prompt": {"type": "string", "description": "Image description. Be specific about style, format, background."},
+                "output_path": {"type": "string", "description": "Save path (default: gemini_web.png)."},
+                "headless": {"type": "boolean", "description": "Run browser invisibly. Needs prior login. Default false.", "default": False},
             },
             "required": ["prompt"],
         },
     ),
     types.Tool(
-        name="gemini_generate_rpgmaker",
+        name="generate_dalle",
         description=(
-            "Full pipeline: Gemini generation → watermark removal → AI background removal → "
-            "resize → split into individual RPG Maker frames. One call does everything.\n\n"
-            "Uses Gemini's free web app for generation (Playwright browser automation). "
-            "First call opens a Chrome window for Google login. Subsequent calls reuse the session.\n\n"
-            "The prompt is automatically enhanced with RPG Maker sprite sheet formatting instructions. "
-            "Output: raw image, clean (no watermark), transparent background, resized, and individual frame PNGs."
+            "Generate an image using OpenAI DALL-E 3. Requires OPENAI_API_KEY env var or api_key parameter. "
+            "Get key: https://platform.openai.com/api-keys\n"
+            "Best for: high-quality, natural language understanding, diverse styles."
         ),
         inputSchema={
             "type": "object",
             "properties": {
-                "prompt": {
-                    "type": "string",
-                    "description": "Describe the character (e.g. 'fire mage with staff, red robes'). RPG Maker formatting is added automatically.",
-                },
-                "output_dir": {
-                    "type": "string",
-                    "description": "Directory for output files (default: rpgmaker_output).",
-                    "default": "rpgmaker_output",
-                },
-                "width": {
-                    "type": "integer",
-                    "description": "Frame width in pixels (default 48, RPG Maker standard).",
-                    "default": 48,
-                },
-                "height": {
-                    "type": "integer",
-                    "description": "Frame height in pixels (default 48).",
-                    "default": 48,
-                },
-                "rows": {
-                    "type": "integer",
-                    "description": "Number of animation rows (default 4).",
-                    "default": 4,
-                },
-                "columns": {
-                    "type": "integer",
-                    "description": "Number of frames per row (default 4).",
-                    "default": 4,
-                },
-                "headless": {
-                    "type": "boolean",
-                    "description": "Run browser invisibly (needs prior login). Default false.",
-                    "default": False,
-                },
+                "prompt": {"type": "string", "description": "Image description."},
+                "output_path": {"type": "string", "description": "Save path (default: dalle.png)."},
+                "api_key": {"type": "string", "description": "OpenAI API key (or set OPENAI_API_KEY env var)."},
+                "size": {"type": "string", "description": "Image size: 1024x1024, 1792x1024, or 1024x1792 (default 1024x1024).", "default": "1024x1024"},
+            },
+            "required": ["prompt"],
+        },
+    ),
+    types.Tool(
+        name="generate_stability",
+        description=(
+            "Generate an image using Stability AI (Stable Diffusion). Requires STABILITY_API_KEY env var or api_key parameter. "
+            "Get key: https://platform.stability.ai\n"
+            "Best for: pixel art, game assets, fine-grained style control."
+        ),
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "prompt": {"type": "string", "description": "Image description."},
+                "output_path": {"type": "string", "description": "Save path (default: stability.png)."},
+                "api_key": {"type": "string", "description": "Stability API key (or set STABILITY_API_KEY env var)."},
+            },
+            "required": ["prompt"],
+        },
+    ),
+    types.Tool(
+        name="generate_gemini_api",
+        description=(
+            "Generate an image using the Gemini API (google-genai SDK). Requires GOOGLE_API_KEY with billing enabled. "
+            "Get key: https://aistudio.google.com/apikey — this is the PAID tier, not the free web app. "
+            "For the free version, use generate_gemini instead."
+        ),
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "prompt": {"type": "string", "description": "Image description."},
+                "output_path": {"type": "string", "description": "Save path (default: gemini_api.png)."},
+                "api_key": {"type": "string", "description": "Google API key (or set GOOGLE_API_KEY env var)."},
+                "model": {"type": "string", "description": "Model name (default: gemini-2.5-flash-image).", "default": "gemini-2.5-flash-image"},
+            },
+            "required": ["prompt"],
+        },
+    ),
+    types.Tool(
+        name="generate_rpgmaker",
+        description=(
+            "FULL PIPELINE: generate a pixel art RPG Maker character sprite sheet using any backend, "
+            "then automatically post-process: remove watermark → AI background removal → resize → split into individual frames.\n\n"
+            "Choose backend with the 'backend' parameter:\n"
+            "  gemini  — free Gemini web app, no key (default)\n"
+            "  dalle   — DALL-E 3, needs OPENAI_API_KEY\n"
+            "  stability — Stability AI, needs STABILITY_API_KEY\n"
+            "  gemini_api — Gemini API, needs GOOGLE_API_KEY with billing\n\n"
+            "The prompt is automatically enhanced with RPG Maker MV formatting (grid layout, white bg, pixel edges).\n"
+            "Output: 01_raw.png, 02_clean.png, 03_nobg.png, 04_resized.png, and individual frame PNGs."
+        ),
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "prompt": {"type": "string", "description": "Describe the character (e.g. 'fire mage with staff, red robes'). RPG Maker formatting auto-added."},
+                "output_dir": {"type": "string", "description": "Output directory (default: rpgmaker_output).", "default": "rpgmaker_output"},
+                "backend": {"type": "string", "description": "Generation backend: gemini, dalle, stability, gemini_api (default: gemini).", "default": "gemini"},
+                "width": {"type": "integer", "description": "Frame width (default 48).", "default": 48},
+                "height": {"type": "integer", "description": "Frame height (default 48).", "default": 48},
+                "rows": {"type": "integer", "description": "Animation rows (default 4).", "default": 4},
+                "columns": {"type": "integer", "description": "Frames per row (default 4).", "default": 4},
+                "headless": {"type": "boolean", "description": "Run browser headless (gemini backend only, needs prior login).", "default": False},
+                "api_key": {"type": "string", "description": "API key for the chosen backend (or set env var)."},
             },
             "required": ["prompt"],
         },
@@ -745,8 +769,11 @@ _HANDLERS = {
     "spritesheet_compose": handle_spritesheet_compose,
     "image_pixelate": handle_image_pixelate,
     "image_pixelate_simple": handle_image_pixelate_simple,
-    "gemini_generate": handle_gemini_generate,
-    "gemini_generate_rpgmaker": handle_gemini_generate_rpgmaker,
+    "generate_gemini": handle_generate_gemini,
+    "generate_dalle": handle_generate_dalle,
+    "generate_stability": handle_generate_stability,
+    "generate_gemini_api": handle_generate_gemini_api,
+    "generate_rpgmaker": handle_generate_rpgmaker,
 }
 
 
