@@ -2,7 +2,8 @@
 FrameRonin MCP Server — all-in-one pixel art & game asset pipeline for AI.
 
   Generate: generate_gemini, generate_dalle, generate_stability,
-            generate_gemini_api, generate_rpgmaker (multi-backend pipeline)
+            generate_gemini_api, generate_siliconflow,
+            generate_rpgmaker (multi-backend pipeline)
   Video:    video_to_spritesheet, video_get_info, video_remove_watermark
   Matting:  image_remove_background, image_chroma_key, image_double_background_matte
   Image:    image_remove_gemini_watermark, image_resize, image_crop, image_merge_grid
@@ -18,6 +19,7 @@ import asyncio
 
 from mcp.server import Server
 from mcp.server.stdio import stdio_server
+from mcp.server.models import InitializationOptions
 import mcp.types as types
 
 from .tools.video import (
@@ -51,6 +53,7 @@ from .tools.generate import (
     handle_generate_dalle,
     handle_generate_stability,
     handle_generate_gemini_api,
+    handle_generate_siliconflow,
     handle_generate_rpgmaker,
 )
 
@@ -720,6 +723,29 @@ TOOLS = [
         },
     ),
     types.Tool(
+        name="generate_siliconflow",
+        description=(
+            "Generate an image using SiliconFlow (硅基流动). Requires SILICONFLOW_API_KEY env var or api_key parameter. "
+            "Get key: https://cloud.siliconflow.cn/account/ak\n"
+            "Supports Qwen/Qwen-Image and other open-source image models. "
+            "Best for: Chinese-language prompts, open-source model ecosystem, affordable pricing."
+        ),
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "prompt": {"type": "string", "description": "Image description (Chinese or English)."},
+                "output_path": {"type": "string", "description": "Save path (default: siliconflow_gen.png)."},
+                "api_key": {"type": "string", "description": "SiliconFlow API key (or set SILICONFLOW_API_KEY env var)."},
+                "model": {"type": "string", "description": "Model name (default: Qwen/Qwen-Image).", "default": "Qwen/Qwen-Image"},
+                "negative_prompt": {"type": "string", "description": "Negative prompt (things to avoid in the image)."},
+                "image_size": {"type": "string", "description": "Image size: 1024x1024, 512x512, etc (default 1024x1024).", "default": "1024x1024"},
+                "num_inference_steps": {"type": "integer", "description": "Inference steps (default 20).", "default": 20},
+                "guidance_scale": {"type": "number", "description": "Guidance scale (default 7.5).", "default": 7.5},
+            },
+            "required": ["prompt"],
+        },
+    ),
+    types.Tool(
         name="generate_rpgmaker",
         description=(
             "FULL PIPELINE: generate a pixel art RPG Maker character sprite sheet using any backend, "
@@ -773,6 +799,7 @@ _HANDLERS = {
     "generate_dalle": handle_generate_dalle,
     "generate_stability": handle_generate_stability,
     "generate_gemini_api": handle_generate_gemini_api,
+    "generate_siliconflow": handle_generate_siliconflow,
     "generate_rpgmaker": handle_generate_rpgmaker,
 }
 
@@ -810,7 +837,11 @@ async def call_tool(name: str, arguments: dict) -> list[types.TextContent]:
 
 async def main_async():
     async with stdio_server() as (read_stream, write_stream):
-        await server.run(read_stream, write_stream)
+        await server.run(
+            read_stream,
+            write_stream,
+            server.create_initialization_options(),
+        )
 
 
 def main():

@@ -20,7 +20,7 @@ MCP tools:
 
 from pathlib import Path
 
-from . import gemini_web, gemini_api, dalle, stability
+from . import gemini_web, gemini_api, dalle, stability, siliconflow
 
 # Backend registry — maps backend name to module
 BACKENDS = {
@@ -28,6 +28,7 @@ BACKENDS = {
     "gemini_api": gemini_api,
     "dalle": dalle,
     "stability": stability,
+    "siliconflow": siliconflow,
 }
 
 DEFAULT_BACKEND = "gemini"  # free, no key needed
@@ -136,7 +137,7 @@ def _make_generate_handler(backend_name: str):
         else:
             key = args.get("api_key", "")
             if not key:
-                env_map = {"gemini_api": "GOOGLE_API_KEY", "dalle": "OPENAI_API_KEY", "stability": "STABILITY_API_KEY"}
+                env_map = {"gemini_api": "GOOGLE_API_KEY", "dalle": "OPENAI_API_KEY", "stability": "STABILITY_API_KEY", "siliconflow": "SILICONFLOW_API_KEY"}
                 import os
                 key = os.environ.get(env_map.get(backend_name, ""), "")
             kwargs["api_key"] = key
@@ -161,6 +162,10 @@ def handle_generate_stability(args: dict) -> dict:
 
 def handle_generate_gemini_api(args: dict) -> dict:
     return _make_generate_handler("gemini_api")(args)
+
+
+def handle_generate_siliconflow(args: dict) -> dict:
+    return _make_generate_handler("siliconflow")(args)
 
 
 def handle_generate_rpgmaker(args: dict) -> dict:
