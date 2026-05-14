@@ -109,10 +109,9 @@ def _rpgmaker_pipeline(
     api_key: str,
 ) -> dict:
     """Full pipeline: generate → watermark → white-to-alpha → resize(nearest) → split."""
-    import numpy as np
     from PIL import Image as PILImage
     from ...lib.watermark import remove_gemini_watermark
-    from ...lib.image_utils import load_image, save_image
+    from ...lib.image_utils import load_image, save_image, white_to_alpha
 
     mod = BACKENDS.get(backend, gemini_web)
 
@@ -151,13 +150,7 @@ def _rpgmaker_pipeline(
     # Step 3: White → transparent (pixel-art-safe, no AI blur)
     nobg = output_dir / "03_nobg.png"
     img = load_image(clean)
-    arr = np.array(img).astype(np.float32)
-    # Key out white pixels (R>240, G>240, B>240) → transparent
-    white_mask = (arr[:, :, 0] > 240) & (arr[:, :, 1] > 240) & (arr[:, :, 2] > 240)
-    arr[white_mask, 3] = 0
-    # Hard edge: anything below 128 alpha → fully transparent
-    arr[arr[:, :, 3] < 128, :] = 0
-    img = PILImage.fromarray(arr.astype(np.uint8), "RGBA")
+    img = white_to_alpha(img)
     save_image(img, nobg)
     result["nobg_path"] = str(nobg)
     result["steps"].append("white_to_alpha")

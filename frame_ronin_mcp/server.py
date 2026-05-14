@@ -2,8 +2,10 @@
 FrameRonin MCP Server — all-in-one pixel art & game asset pipeline for AI.
 
   Generate: generate_gemini, generate_dalle, generate_stability,
-            generate_gemini_api, generate_siliconflow,
-            generate_rpgmaker (multi-backend pipeline)
+            generate_gemini_api, generate_siliconflow, generate_rpgmaker
+  Godot:    godot_create_project, godot_create_scene, godot_create_spriteframes,
+            godot_create_tileset, godot_export_character, godot_validate
+  Game:     game_create_blank, game_add_character, game_build_and_verify
   Video:    video_to_spritesheet, video_get_info, video_remove_watermark
   Matting:  image_remove_background, image_chroma_key, image_double_background_matte
   Image:    image_remove_gemini_watermark, image_resize, image_crop, image_merge_grid
@@ -55,6 +57,19 @@ from .tools.generate import (
     handle_generate_gemini_api,
     handle_generate_siliconflow,
     handle_generate_rpgmaker,
+)
+from .tools.godot import (
+    handle_godot_create_project,
+    handle_godot_create_scene,
+    handle_godot_create_spriteframes,
+    handle_godot_create_tileset,
+    handle_godot_export_character,
+    handle_godot_validate,
+)
+from .tools.game import (
+    handle_game_create_blank,
+    handle_game_add_character,
+    handle_game_build_and_verify,
 )
 
 
@@ -774,6 +789,184 @@ TOOLS = [
             "required": ["prompt"],
         },
     ),
+    # ── Phase 4: Godot Format Support ──
+    types.Tool(
+        name="godot_create_project",
+        description=(
+            "Create a new Godot 4.6 pixel art game project. Generates project.godot with "
+            "integer-scaled viewport, Nearest-neighbor texture filter, default InputMap "
+            "(move/attack/interact), directory tree, main.tscn with Camera2D, and icon.svg."
+        ),
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "project_name": {"type": "string", "description": "Godot project name."},
+                "project_dir": {"type": "string", "description": "Directory to create the project in."},
+                "resolution_w": {"type": "integer", "description": "Viewport width (default 480).", "default": 480},
+                "resolution_h": {"type": "integer", "description": "Viewport height (default 270).", "default": 270},
+                "renderer": {"type": "string", "enum": ["gl_compatibility", "forward_plus", "mobile"], "description": "Renderer (default gl_compatibility).", "default": "gl_compatibility"},
+            },
+            "required": ["project_name", "project_dir"],
+        },
+    ),
+    types.Tool(
+        name="godot_create_scene",
+        description=(
+            "Generate a .tscn scene file. Build any node tree structure: Node2D, "
+            "CharacterBody2D, Area2D, Sprite2D, CollisionShape2D, Camera2D, AnimatedSprite2D, "
+            "AnimationPlayer. Supports ext_resource references and sub-resources (shapes)."
+        ),
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "scene_name": {"type": "string", "description": "Scene file name (without .tscn)."},
+                "output_dir": {"type": "string", "description": "Directory for the .tscn file."},
+                "node_type": {"type": "string", "description": "Root node type: Node2D, CharacterBody2D, Area2D, etc (default Node2D).", "default": "Node2D"},
+                "child_nodes": {"type": "array", "description": "Child nodes with name, type, properties, children."},
+                "ext_resources": {"type": "array", "description": "External resource references."},
+                "sub_resources": {"type": "array", "description": "Sub-resources (shapes, etc)."},
+            },
+            "required": ["scene_name", "output_dir"],
+        },
+    ),
+    types.Tool(
+        name="godot_create_spriteframes",
+        description=(
+            "Generate a SpriteFrames .tres resource from a spritesheet. Creates AtlasTexture "
+            "sub-resources for each frame cell and animation definitions. Row 0=down, 1=left, 2=right, 3=up. "
+            "Output is ready for AnimatedSprite2D."
+        ),
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "spritesheet_path": {"type": "string", "description": "Path to the spritesheet PNG."},
+                "output_path": {"type": "string", "description": "Path for the .tres file."},
+                "cell_width": {"type": "integer", "description": "Width of each frame cell in pixels."},
+                "cell_height": {"type": "integer", "description": "Height of each frame cell in pixels."},
+                "rows": {"type": "integer", "description": "Number of rows in the spritesheet."},
+                "columns": {"type": "integer", "description": "Number of columns in the spritesheet."},
+                "animation_defs": {"type": "array", "description": "Animation definitions: [{name, row, speed, loop}]."},
+            },
+            "required": ["spritesheet_path", "output_path", "cell_width", "cell_height", "rows", "columns"],
+        },
+    ),
+    types.Tool(
+        name="godot_create_tileset",
+        description=(
+            "Generate a TileSet .tres resource from a tilesheet image. "
+            "Creates TileSetAtlasSource with proper tile regions. "
+            "Optional per-tile collision rectangles."
+        ),
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "tilesheet_path": {"type": "string", "description": "Path to the tilesheet PNG."},
+                "output_path": {"type": "string", "description": "Path for the .tres file."},
+                "tile_width": {"type": "integer", "description": "Width of each tile in pixels."},
+                "tile_height": {"type": "integer", "description": "Height of each tile in pixels."},
+                "columns": {"type": "integer", "description": "Number of columns."},
+                "rows": {"type": "integer", "description": "Number of rows."},
+                "collision_data": {"type": "array", "description": "Collision rects: [{tile_id, x, y, width, height}]."},
+            },
+            "required": ["tilesheet_path", "output_path", "tile_width", "tile_height", "columns", "rows"],
+        },
+    ),
+    types.Tool(
+        name="godot_export_character",
+        description=(
+            "Export a complete Godot character from a spritesheet. One call produces: "
+            "copied spritesheet, SpriteFrames.tres (with AtlasTexture per frame + animations), "
+            "and a CharacterBody2D.tscn scene with AnimatedSprite2D + CollisionShape2D + Camera2D."
+        ),
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "spritesheet_path": {"type": "string", "description": "Path to the spritesheet PNG."},
+                "character_name": {"type": "string", "description": "Character name (used for files and node names)."},
+                "output_dir": {"type": "string", "description": "Directory for the character folder."},
+                "cell_width": {"type": "integer", "description": "Frame width (auto-detect if omitted)."},
+                "cell_height": {"type": "integer", "description": "Frame height (auto-detect if omitted)."},
+                "rows": {"type": "integer", "description": "Rows (default 4).", "default": 4},
+                "columns": {"type": "integer", "description": "Columns (default 4).", "default": 4},
+                "animation_defs": {"type": "array", "description": "Animation definitions."},
+            },
+            "required": ["spritesheet_path", "character_name", "output_dir"],
+        },
+    ),
+    types.Tool(
+        name="godot_validate",
+        description=(
+            "Validate a Godot project or .tscn scene file. Performs offline file-structure "
+            "validation (format correctness, node counts, broken references). "
+            "If Godot 4.6 is on PATH, also runs engine-level --headless --check-only."
+        ),
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "project_path": {"type": "string", "description": "Path to project directory or project.godot."},
+                "scene_path": {"type": "string", "description": "Path to a .tscn file."},
+            },
+        },
+    ),
+    # ── Phase 5: Game Pipeline Orchestration ──
+    types.Tool(
+        name="game_create_blank",
+        description=(
+            "One-call: create a complete blank Godot 4.6 pixel art game project. "
+            "Generates project.godot (480x270, integer scale, Nearest filter, InputMap defaults), "
+            "directory tree, main.tscn (Camera2D + Player placeholder), icon.svg, and autoload stubs (globals.gd, game_manager.gd). "
+            "Ready to open in Godot editor."
+        ),
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "game_name": {"type": "string", "description": "Project folder name / Godot project name."},
+                "output_dir": {"type": "string", "description": "Parent directory for the project."},
+                "resolution_w": {"type": "integer", "description": "Viewport width (default 480).", "default": 480},
+                "resolution_h": {"type": "integer", "description": "Viewport height (default 270).", "default": 270},
+                "game_title": {"type": "string", "description": "Display title (defaults to game_name)."},
+                "renderer": {"type": "string", "enum": ["gl_compatibility", "forward_plus", "mobile"], "default": "gl_compatibility"},
+            },
+            "required": ["game_name", "output_dir"],
+        },
+    ),
+    types.Tool(
+        name="game_add_character",
+        description=(
+            "Add a complete character to an existing Godot project. "
+            "Either from an existing spritesheet, OR by generating one via Gemini (free web app). "
+            "Full pipeline: generate → watermark removal → white-to-alpha → resize(NEAREST) → "
+            "SpriteFrames.tres → CharacterBody2D.tscn with AnimatedSprite2D + CollisionShape2D."
+        ),
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "project_dir": {"type": "string", "description": "Path to the Godot project."},
+                "character_name": {"type": "string", "description": "Character name."},
+                "spritesheet_path": {"type": "string", "description": "Existing spritesheet (or use prompt instead)."},
+                "prompt": {"type": "string", "description": "Description for Gemini generation (or use spritesheet_path instead)."},
+                "generate_backend": {"type": "string", "description": "Generation backend: gemini, dalle, stability, gemini_api, siliconflow (default gemini).", "default": "gemini"},
+                "rows": {"type": "integer", "description": "Rows (default 4).", "default": 4},
+                "columns": {"type": "integer", "description": "Columns (default 4).", "default": 4},
+                "api_key": {"type": "string", "description": "API key for the backend (or set env var)."},
+            },
+            "required": ["project_dir", "character_name"],
+        },
+    ),
+    types.Tool(
+        name="game_build_and_verify",
+        description=(
+            "Validate an entire Godot project. Checks: project.godot exists, all .tscn/.tres files parse correctly, "
+            "no broken ext_resource references. If Godot 4.6 is on PATH, also runs engine-level validation."
+        ),
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "project_path": {"type": "string", "description": "Path to the Godot project directory."},
+            },
+            "required": ["project_path"],
+        },
+    ),
 ]
 
 # ── Tool handler dispatch ─────────────────────────────────────────────────
@@ -801,6 +994,15 @@ _HANDLERS = {
     "generate_gemini_api": handle_generate_gemini_api,
     "generate_siliconflow": handle_generate_siliconflow,
     "generate_rpgmaker": handle_generate_rpgmaker,
+    "godot_create_project": handle_godot_create_project,
+    "godot_create_scene": handle_godot_create_scene,
+    "godot_create_spriteframes": handle_godot_create_spriteframes,
+    "godot_create_tileset": handle_godot_create_tileset,
+    "godot_export_character": handle_godot_export_character,
+    "godot_validate": handle_godot_validate,
+    "game_create_blank": handle_game_create_blank,
+    "game_add_character": handle_game_add_character,
+    "game_build_and_verify": handle_game_build_and_verify,
 }
 
 

@@ -90,6 +90,20 @@ def scale_nearest_neighbor(img: Image.Image, width: int, height: int) -> Image.I
     return img.resize((width, height), Image.Resampling.NEAREST)
 
 
+def white_to_alpha(img: Image.Image, threshold: int = 240) -> Image.Image:
+    """
+    Convert white pixels to transparent — pixel-art-safe, no AI blur.
+    Pixels where R>threshold AND G>threshold AND B>threshold become transparent.
+    Hard edge: alpha < 128 → fully transparent.
+    """
+    import numpy as np
+    arr = np.array(img.convert("RGBA")).astype(np.float32)
+    mask = (arr[:, :, 0] > threshold) & (arr[:, :, 1] > threshold) & (arr[:, :, 2] > threshold)
+    arr[mask, 3] = 0
+    arr[arr[:, :, 3] < 128, :] = 0
+    return Image.fromarray(arr.astype(np.uint8), "RGBA")
+
+
 def get_image_info(img: Image.Image) -> dict:
     """Return basic image metadata."""
     return {
