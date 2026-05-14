@@ -253,7 +253,7 @@ def generate_tscn(
         lines.append(f"position = Vector2({_fmt(root_position[0])}, {_fmt(root_position[1])})")
 
     # Children
-    _write_child_nodes(lines, child_nodes, parent_name=scene_name)
+    _write_child_nodes(lines, child_nodes, parent_name=".")
 
     return "\n".join(lines) + "\n"
 
