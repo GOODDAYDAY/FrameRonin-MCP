@@ -44,11 +44,32 @@ FrameRonin MCP wraps the [FrameRonin](https://github.com/systemchester/FrameRoni
 
 ### Screenshots
 
-<!-- TODO: Add screenshots of the pipeline in action -->
-| Input | Output |
-|---|---|
-| `![Before](docs/assets/before.png)` | `![After](docs/assets/after.png)` |
-| *Gemini-generated sprite* | *After watermark removal → matting → resize → split* |
+### What You Get
+
+Gemini generates a sprite sheet (4×4 grid). FrameRonin processes it into usable game assets:
+
+<p align="center">
+  <img src="docs/assets/pipeline-demo.png" alt="Pipeline" width="100%">
+</p>
+
+**Each row is an animation direction, each column is a frame of that animation:**
+
+<p align="center">
+  <img src="docs/assets/01_warrior_anim.gif" width="144">  
+  <img src="docs/assets/02_sword_anim.gif" width="144">  
+  <img src="docs/assets/03_slime_anim.gif" width="144">
+  <br><sub>Warrior walk · Sword glow · Slime bounce — 4-frame loops extracted from sprite sheet</sub>
+</p>
+
+| Step | Tool | Input → Output |
+|---|---|---|
+| 1. Generate | `generate_gemini` | Prompt → 2048×2048 sprite sheet |
+| 2. Clean | `image_remove_gemini_watermark` | Remove AI watermark |
+| 3. Matte | `image_remove_background` | White bg → transparent |
+| 4. Resize | `image_resize` | 2048² → 192×192 (4×48px grid) |
+| 5. Split | `spritesheet_split` | Sheet → 16 individual frame PNGs |
+
+**Final output**: 16 PNGs (48×48 each with transparent background) — directly importable into RPG Maker MV, Godot, Unity, or any 2D game engine.
 
 ---
 
@@ -188,11 +209,32 @@ FrameRonin MCP 将 [FrameRonin](https://github.com/systemchester/FrameRonin) 像
 
 ### 效果展示
 
-<!-- TODO: 添加管线效果截图 -->
-| 输入 | 输出 |
-|---|---|
-| `![处理前](docs/assets/before.png)` | `![处理后](docs/assets/after.png)` |
-| *Gemini生成的精灵图* | *去水印 → 抠图 → 缩放 → 拆帧后* |
+### 产出什么
+
+Gemini生成4×4精灵表，FrameRonin加工成可用的游戏素材：
+
+<p align="center">
+  <img src="docs/assets/pipeline-demo.png" alt="流程" width="100%">
+</p>
+
+**每行是一个动画方向，每列是该方向的一帧：**
+
+<p align="center">
+  <img src="docs/assets/01_warrior_anim.gif" width="144">  
+  <img src="docs/assets/02_sword_anim.gif" width="144">  
+  <img src="docs/assets/03_slime_anim.gif" width="144">
+  <br><sub>战士行走 · 剑发光 · 史莱姆弹跳 — 从精灵表拆出的4帧循环动画</sub>
+</p>
+
+| 步骤 | 工具 | 效果 |
+|---|---|---|
+| 1. 生成 | `generate_gemini` | 提示词 → 大尺寸精灵表 |
+| 2. 清洁 | `image_remove_gemini_watermark` | 去除AI水印 |
+| 3. 抠图 | `image_remove_background` | 白底 → 透明背景 |
+| 4. 缩放 | `image_resize` | 缩放到目标网格尺寸 |
+| 5. 拆帧 | `spritesheet_split` | 精灵表 → 16个独立帧PNG |
+
+**最终产出**: 16张48×48透明背景PNG — 可直接导入RPG Maker MV、Godot、Unity等引擎使用。
 
 ## 安装
 
