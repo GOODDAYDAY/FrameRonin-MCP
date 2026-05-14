@@ -54,6 +54,15 @@ FrameRonin MCP 将 [FrameRonin](https://github.com/systemchester/FrameRonin) 像
   <img src="docs/assets/demo-full-pipeline.png" alt="完整管线演示" width="100%">
 </p>
 
+**从第0行提取的帧，补白到正方形，无变形：**
+
+<p align="center">
+  <img src="docs/assets/warrior_anim.gif" width="144">  
+  <img src="docs/assets/sword_anim.gif" width="144">  
+  <img src="docs/assets/slime_anim.gif" width="144">
+  <br><sub>战士 · 剑 · 史莱姆 — 4帧循环，原始格补白为正方形</sub>
+</p>
+
 | 步骤 | 工具 | 效果 |
 |---|---|---|
 | 1. 生成 | `generate_gemini` | 自动扩写提示词 → 精灵表 |

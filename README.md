@@ -54,6 +54,15 @@ Input: *"a warrior with silver armor and a sword"* — automatically expanded, t
   <img src="docs/assets/demo-full-pipeline.png" alt="Full Pipeline Demo" width="100%">
 </p>
 
+**Extracted frames from row 0, padded to square, no distortion:**
+
+<p align="center">
+  <img src="docs/assets/warrior_anim.gif" width="144">  
+  <img src="docs/assets/sword_anim.gif" width="144">  
+  <img src="docs/assets/slime_anim.gif" width="144">
+  <br><sub>Warrior · Sword · Slime — 4-frame loops, native cells padded to square</sub>
+</p>
+
 | Step | Tool | Input → Output |
 |---|---|---|
 | 1. Generate | `generate_gemini` | Auto-expanded prompt → sprite sheet |
