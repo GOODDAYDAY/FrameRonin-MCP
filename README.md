@@ -1,81 +1,17 @@
 # FrameRonin MCP Server
 
-MCP (Model Context Protocol) server wrapping [FrameRonin](https://github.com/systemchester/FrameRonin)'s pixel art and sprite sheet processing tools — enabling AI assistants to directly perform video frame extraction, background removal, GIF manipulation, sprite sheet composition, and pixel art conversion.
+One MCP server for the complete pixel art game asset pipeline — Gemini generation → post-processing → game-ready assets.
 
-## Tools (14)
+18 tools in one server.
 
-### Video
-| Tool | Description |
-|---|---|
-| `video_to_spritesheet` | Extract frames → AI matting → sprite sheet + index JSON |
-| `video_get_info` | Probe video metadata (duration, resolution, fps) |
-| `video_remove_watermark` | Remove Seedance/Jiemeng "AI生成" watermark |
-
-### Image Matting
-| Tool | Description |
-|---|---|
-| `image_remove_background` | AI matting via rembg (U2Net) |
-| `image_chroma_key` | Green/blue screen removal with spill suppression |
-| `image_double_background_matte` | Black+white background differential alpha extraction |
-
-### Image Processing
-| Tool | Description |
-|---|---|
-| `image_remove_gemini_watermark` | Remove Gemini AI watermark via reverse alpha blending |
-| `image_resize` | Scale image (lanczos/nearest/bilinear) |
-| `image_crop` | Crop to rectangle |
-| `image_merge_grid` | Merge multiple images into grid atlas |
-
-### GIF & Sprite Sheet
-| Tool | Description |
-|---|---|
-| `gif_extract_frames` | Extract all frames from animated GIF |
-| `frames_to_gif` | Combine image sequence into animated GIF |
-| `spritesheet_split` | Split sprite sheet by uniform grid |
-| `spritesheet_compose` | Compose frames into sprite sheet with index |
-
-### Pixel Art
-| Tool | Description |
-|---|---|
-| `image_pixelate` | Proper pixel art conversion (OpenCV mesh detection) |
-| `image_pixelate_simple` | Simple uniform-grid pixelation (fast) |
-
-## Requirements
-
-- Python 3.11+
-- FFmpeg (in PATH, for video tools)
-- rembg models auto-download on first use (~176MB)
-
-## Install
+## Quick Start
 
 ```bash
 pip install frame-ronin-mcp
+frame-ronin-mcp
 ```
 
-Or from source:
-
-```bash
-git clone https://github.com/systemchester/FrameRonin-MCP.git
-cd FrameRonin-MCP
-pip install -e .
-```
-
-## Configure Claude Code
-
-Add to `.claude/mcp.json`:
-
-```json
-{
-  "mcpServers": {
-    "frame-ronin": {
-      "command": "python",
-      "args": ["-m", "frame_ronin_mcp.server"]
-    }
-  }
-}
-```
-
-Or after `pip install`:
+Then add to `.claude/mcp.json`:
 
 ```json
 {
@@ -87,60 +23,79 @@ Or after `pip install`:
 }
 ```
 
-## Usage Examples
+## Tools (18)
 
-### Extract sprite sheet from video
+### Gemini Generation
+| Tool | Description |
+|---|---|
+| `gemini_generate` | Generate image via Gemini free web app (Playwright — login once, reuse forever) |
+| `gemini_generate_rpgmaker` | Full pipeline: generate → watermark removal → AI matting → resize → split frames |
 
-```
-> Use frame-ronin to convert video.mp4 to a sprite sheet at 12fps, 256x256 frames
-```
+### Video
+| Tool | Description |
+|---|---|
+| `video_to_spritesheet` | Extract frames → AI matting → sprite sheet + index JSON |
+| `video_get_info` | Probe video metadata |
+| `video_remove_watermark` | Remove Seedance watermark |
 
-### Remove green screen
+### Matting
+| Tool | Description |
+|---|---|
+| `image_remove_background` | AI matting via rembg (U2Net) |
+| `image_chroma_key` | Green/blue screen removal |
+| `image_double_background_matte` | Black+white differential matting |
 
-```
-> Remove the green screen from actor.png with tolerance 40 and smoothness 30
-```
+### Image Processing
+| Tool | Description |
+|---|---|
+| `image_remove_gemini_watermark` | Remove Gemini watermark |
+| `image_resize` | Scale image |
+| `image_crop` | Crop to rectangle |
+| `image_merge_grid` | Merge images into grid atlas |
 
-### Pixelate an image
+### GIF & Sprite Sheet
+| Tool | Description |
+|---|---|
+| `gif_extract_frames` | Extract frames from animated GIF |
+| `frames_to_gif` | Combine frames into GIF |
+| `spritesheet_split` | Split sprite sheet by grid |
+| `spritesheet_compose` | Compose frames into sprite sheet |
 
-```
-> Convert artwork.png to pixel art with 16 colors and 4x output scale
-```
-
-### Remove Gemini watermark
-
-```
-> Clean the Gemini watermark from generated_image.png
-```
+### Pixel Art
+| Tool | Description |
+|---|---|
+| `image_pixelate` | Proper pixel art conversion (OpenCV mesh detection) |
+| `image_pixelate_simple` | Simple uniform-grid pixelation (fast) |
 
 ## Project Structure
 
 ```
 FrameRonin-MCP/
-├── src/frame_ronin_mcp/
-│   ├── server.py              # MCP server entry point
-│   ├── tools/                 # Tool handlers
+├── pyproject.toml
+├── frame_ronin_mcp/
+│   ├── server.py              # MCP entry point (18 tools)
+│   ├── tools/
+│   │   ├── gemini.py          # Gemini web app generation
 │   │   ├── video.py           # Video processing
 │   │   ├── matting.py         # Background removal
 │   │   ├── image.py           # Image operations
 │   │   ├── gif_sprite.py      # GIF & sprite sheet
 │   │   └── pixelate.py        # Pixel art conversion
-│   └── lib/                   # Core algorithms
-│       ├── watermark.py       # Gemini watermark removal
-│       ├── chroma_key.py      # Chroma key matting
-│       ├── double_bg.py       # Double background matting
-│       ├── mesh.py            # OpenCV grid detection
-│       └── pixelate_core.py   # Proper pixel art algorithm
-├── pyproject.toml
-└── requirements.txt
+│   └── lib/
+│       ├── gemini_generator.py  # Playwright Gemini client
+│       ├── watermark.py         # Gemini watermark removal
+│       ├── chroma_key.py        # Chroma key matting
+│       ├── double_bg.py         # Double background matting
+│       ├── mesh.py              # OpenCV grid detection
+│       └── pixelate_core.py     # Proper pixel art algorithm
 ```
+
+## Requirements
+
+- Python 3.11+
+- FFmpeg (for video tools)
+- Chrome (for Gemini generation — installed automatically by Playwright)
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
-
-## Related
-
-- [FrameRonin](https://github.com/systemchester/FrameRonin) — web application with UI
-- [proper-pixel-art](https://github.com/KennethJAllen/proper-pixel-art) — pixel art algorithm
-- [GeminiWatermarkTool](https://github.com/allenk/GeminiWatermarkTool) — watermark removal
+MIT
