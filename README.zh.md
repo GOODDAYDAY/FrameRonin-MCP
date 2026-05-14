@@ -65,11 +65,11 @@ FrameRonin MCP 将 [FrameRonin](https://github.com/systemchester/FrameRonin) 像
 
 | 步骤 | 工具 | 效果 |
 |---|---|---|
-| 1. 生成 | `generate_gemini` | 自动扩写提示词 → 1024×559精灵表 |
+| 1. 生成 | `generate_gemini` | 自动扩写提示词 → 精灵表 |
 | 2. 清洁 | `image_remove_gemini_watermark` | 反向Alpha混合去除AI水印 |
-| 3. 抠图 | `image_remove_background` | 白底 → 透明背景 (rembg/U2Net) |
-| 4. 缩放 | `image_resize` | 缩放到192×192 (4×48px RPG Maker网格) |
-| 5. 拆帧 | `spritesheet_split` | 精灵表 → 16个48×48独立帧PNG |
+| 3. 抠白 | white-to-alpha | 白色像素 → 透明 (像素安全，无AI模糊) |
+| 4. 缩放 | `image_resize` (NEAREST) | 最近邻缩放，保持硬边缘 |
+| 5. 拆帧 | `spritesheet_split` | 精灵表 → 独立帧PNG |
 
 **最终产出**: 16张48×48透明背景PNG — 可直接导入RPG Maker MV、Godot、Unity等引擎使用。
 

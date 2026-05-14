@@ -65,11 +65,11 @@ Input: *"a warrior with silver armor and a sword"* — automatically expanded, t
 
 | Step | Tool | Input → Output |
 |---|---|---|
-| 1. Generate | `generate_gemini` | Auto-expanded prompt → 1024×559 sprite sheet |
+| 1. Generate | `generate_gemini` | Auto-expanded prompt → sprite sheet |
 | 2. Clean | `image_remove_gemini_watermark` | Remove AI watermark via reverse alpha blending |
-| 3. Matte | `image_remove_background` | White bg → transparent (rembg/U2Net) |
-| 4. Resize | `image_resize` | Scale to 192×192 (4×48px RPG Maker grid) |
-| 5. Split | `spritesheet_split` | Sheet → 16 individual 48×48 frame PNGs |
+| 3. Key Out | white-to-alpha | White pixels → transparent (pixel-safe, no AI blur) |
+| 4. Resize | `image_resize` (NEAREST) | Pixel-perfect scale preserving hard edges |
+| 5. Split | `spritesheet_split` | Sheet → individual frame PNGs |
 
 **Final output**: 16 PNGs (48×48, transparent background) — directly importable into RPG Maker MV, Godot, Unity, or any 2D game engine.
 
