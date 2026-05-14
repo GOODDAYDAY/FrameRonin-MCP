@@ -54,15 +54,6 @@ Input: *"a warrior with silver armor and a sword"* — automatically expanded, t
   <img src="docs/assets/demo-full-pipeline.png" alt="Full Pipeline Demo" width="100%">
 </p>
 
-**Each row is an animation direction, each column is a frame of that animation:**
-
-<p align="center">
-  <img src="docs/assets/warrior_anim.gif" width="144">  
-  <img src="docs/assets/sword_anim.gif" width="144">  
-  <img src="docs/assets/slime_anim.gif" width="144">
-  <br><sub>Warrior walk · Sword glow · Slime bounce — 4-frame loops from sprite sheet</sub>
-</p>
-
 | Step | Tool | Input → Output |
 |---|---|---|
 | 1. Generate | `generate_gemini` | Auto-expanded prompt → sprite sheet |
